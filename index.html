@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>开源雷达 · GitHub 开源雷达中文版</title>
+<!-- PWA：可安装 + 移动端外观（D1 配套的 manifest / 图标声明） -->
+<meta name="theme-color" content="#24292f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="开源雷达">
+<style>
+/* ============ 主题变量 ============
+ * 默认深色：#24292f（GitHub 深灰），可手动切换浅色（body.light） */
+:root{
+  --bg:#24292f;            /* 页面背景（深色主题主色） */
+  --bar:#1f2328;           /* 顶栏 / 底部 Tab 栏背景 */
+  --card:#2d333b;          /* 卡片背景（比背景亮一档） */
+  --text:#e6edf3;          /* 主文字 */
+  --muted:#9aa4af;         /* 次要文字 */
+  --border:#3d444d;        /* 分割线 */
+  --accent:#58a6ff;        /* 强调色（GitHub 蓝） */
+  --btn:#3d444d;           /* 按钮底色 */
+  --badge-gray-bg:#3d444d; --badge-gray-tx:#c9d1d9;
+  --badge-blue-bg:rgba(88,166,255,.16);  --badge-blue-tx:#58a6ff;
+  --badge-purple-bg:rgba(137,87,229,.18);--badge-purple-tx:#b895f0;
+  --shadow:0 1px 3px rgba(0,0,0,.25);
+}
+body.light{
+  --bg:#f6f8fa; --bar:#ffffff; --card:#ffffff;
+  --text:#1f2328; --muted:#59636e; --border:#d0d7de;
+  --accent:#0969da; --btn:#f6f8fa;
+  --badge-gray-bg:#f6f8fa;  --badge-gray-tx:#59636e;
+  --badge-blue-bg:#ddf4ff;  --badge-blue-tx:#0969da;
+  --badge-purple-bg:#fbefff;--badge-purple-tx:#7c4dcc;
+  --shadow:0 1px 3px rgba(31,35,40,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  min-height:100vh;
+}
+/* ============ 顶部栏 ============ */
+.topbar{
+  max-width:640px;margin:0 auto;padding:14px 16px 12px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  position:sticky;top:0;z-index:10;
+  background:var(--bar);border-bottom:1px solid var(--border);
+}
+.topbar h1{margin:0;font-size:19px;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.topbar h1::before{content:"📡";font-size:17px}
+.meta{margin-top:2px;font-size:12px;color:var(--muted)}
+.icon-btn{
+  border:1px solid var(--border);background:var(--btn);color:var(--text);
+  width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer;flex:none;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.icon-btn:active{opacity:.7}
+.icon-btn.spin svg,.icon-btn.spin{animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+/* 提示条 */
+#banner,#err{
+  max-width:640px;margin:10px auto 0;padding:8px 14px;border-radius:8px;font-size:13px;
+}
+#banner{background:rgba(210,153,34,.15);color:#d29922;border:1px solid rgba(210,153,34,.4)}
+body.light #banner{color:#9a6700;border-color:#d4a72c;background:#fff8c5}
+#err{background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.4)}
+body.light #err{color:#cf222e;background:#ffebe9;border-color:#ff8182}
+#err button{
+  margin-left:8px;border:1px solid currentColor;background:none;color:inherit;
+  border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;
+}
+/* ============ 主内容区 ============ */
+main{
+  max-width:640px;margin:0 auto;padding:12px 12px
+  calc(74px + env(safe-area-inset-bottom)); /* 底部给固定 Tab 栏留白 */
+}
+.pane{display:none}
+.pane.active{display:block}
+.card{
+  background:var(--card);border-radius:12px;box-shadow:var(--shadow);
+  padding:12px 14px;margin-bottom:12px;
+  border:1px solid transparent;
+}
+@media(hover:hover){.card:hover{border-color:var(--border)}}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-name{font-size:15px;font-weight:700;word-break:break-all}
+/* 徽章：Skill 蓝 / Agent 紫 / 软件 灰 */
+.badge{
+  flex:none;font-size:11px;padding:2px 8px;border-radius:99px;margin-top:2px;
+  border:1px solid transparent;
+}
+.badge-skill{background:var(--badge-blue-bg);color:var(--badge-blue-tx)}
+.badge-agent{background:var(--badge-purple-bg);color:var(--badge-purple-tx)}
+.badge-soft{background:var(--badge-gray-bg);color:var(--badge-gray-tx)}
+.stars{font-size:13px;margin:6px 0;color:var(--accent);font-weight:600}
+.desc{margin:0 0 10px;font-size:13px;color:var(--text);word-break:break-word}
+.lang-chip{
+  display:inline-block;font-size:11px;color:var(--muted);
+  border:1px solid var(--border);border-radius:99px;padding:1px 9px;margin-bottom:8px;
+}
+.detail-toggle{
+  display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  color:var(--accent);font-size:13px;font-weight:600;padding:6px 0;margin-bottom:4px;
+}
+.detail-body{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin:4px 0 10px;
+}
+.detail-body p{margin:0;font-size:13px;line-height:1.7;color:var(--text)}
+.card-actions{display:flex;gap:8px;align-items:center;margin-top:2px}
+.copy-btn{
+  background:var(--btn);border:1px solid var(--border);color:var(--text);
+  font-size:12px;border-radius:7px;padding:5px 12px;cursor:pointer;
+}
+.gh-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--btn);border:1px solid var(--border);color:var(--text);
+  font-size:12px;text-decoration:none;border-radius:7px;padding:5px 12px;
+}
+.gh-btn:active,.copy-btn:active{opacity:.7}
+#toast{
+  position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(10px);
+  background:rgba(0,0,0,.78);color:#fff;font-size:13px;padding:8px 18px;border-radius:99px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:80%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+body.light #toast{background:rgba(31,35,40,.85)}
+.empty{color:var(--muted);text-align:center;padding:40px 0;font-size:13px}
+/* 分类小节标题 */
+.group-title{
+  margin:16px 4px 10px;font-size:15px;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+}
+.group-title .g-count{font-size:11px;color:var(--muted);font-weight:400;
+  background:var(--btn);border-radius:99px;padding:1px 8px}
+/* ============ 底部固定 Tab 栏 ============ */
+.tabbar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:640px;z-index:20;
+  display:flex;background:var(--bar);
+  border-top:1px solid var(--border);
+  padding-bottom:env(safe-area-inset-bottom); /* 适配 iPhone 底部 */
+}
+.tab{
+  flex:1;padding:9px 4px 10px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:12px;line-height:1.3;
+  border-top:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.tab .t-ico{font-size:17px;line-height:1}
+.tab.active{color:var(--accent);border-top-color:var(--accent)}
+.tab .t-count{font-size:10px;opacity:.8}
+</style>
+</head>
+<body class="light">
+
+<!-- ============ 顶部：标题 / 日期 / 总数 / 主题切换 / 刷新 ============ -->
+<header class="topbar">
+  <div>
+    <h1>开源雷达</h1>
+    <div class="meta" id="meta">加载中…</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="icon-btn" id="themeBtn" title="切换浅色/深色" type="button"></button>
+    <button class="icon-btn" id="refreshBtn" title="刷新数据" type="button">⟳</button>
+  </div>
+</header>
+
+<!-- 离线 / 错误提示条 -->
+<div id="banner" hidden>⚠️ 离线显示上次数据</div>
+<div id="err" hidden>数据加载失败：请确认通过本机服务访问（pwa 目录运行 python -m http.server）<button type="button" id="retryBtn">重试</button></div>
+
+<!-- 三个 Tab 的内容（高分榜 / 新项目 / 分类），由 JS 渲染 -->
+<main id="main"></main>
+
+<!-- ============ 底部固定 Tab 栏 ============ -->
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-tab="topstar" type="button">
+    <span class="t-ico">🏆</span>高分榜<span class="t-count" id="cTop"></span>
+  </button>
+  <button class="tab" data-tab="new" type="button">
+    <span class="t-ico">✨</span>新项目<span class="t-count" id="cNew"></span>
+  </button>
+  <button class="tab" data-tab="cat" type="button">
+    <span class="t-ico">🗂️</span>分类<span class="t-count" id="cCat"></span>
+  </button>
+</nav>
+
+<script>
+/* =========================================================
+ * 开源雷达 · GitHub 开源雷达中文版 PWA
+ * 数据源：同目录 data.json（本机 python -m http.server 伺服）
+ * 缓存：localStorage 保存上次 data.json，打开先渲染缓存、再静默刷新
+ * ========================================================= */
+'use strict';
+
+const DATA_KEY = 'radar.data.v1'; // localStorage 缓存键
+const THEME_KEY = 'radar.theme';  // 主题偏好键
+
+/* 分类顺序 / 标题 / emoji（空组不显示，不在此列表的归类也忽略） */
+const CATS = [
+  ['sys',        '系统维护', '🛠️'],
+  ['text',       '文本编辑', '📝'],
+  ['image',      '图片处理', '🖼️'],
+  ['player',     '播放',     '▶️'],
+  ['audio_edit', '音频剪辑', '🎧'],
+  ['video_edit', '视频剪辑', '🎬'],
+  ['writing',    '文案写作', '✍️'],
+  ['ai_skill',   'AI Skill', '🧩'],
+  ['agent',      'Agent',    '🤖']
+];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (n) => Number(n || 0).toLocaleString('zh-CN');
+
+/* ---------- 主题：默认跟随系统，可手动切换并记住 ---------- */
+function applyTheme(theme){
+  document.body.classList.toggle('light', theme === 'light');
+  $('themeBtn').textContent = theme === 'light' ? '🌙' : '☀️';
+}
+function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  const theme = saved || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  applyTheme(theme);
+}
+$('themeBtn').addEventListener('click', () => {
+  const next = document.body.classList.contains('light') ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+
+let data = null; // 当前数据 {date, items}
+
+/* ---------- 读取 localStorage 缓存（打开先渲染，不阻塞） ---------- */
+function loadCache(){
+  try{
+    const obj = JSON.parse(localStorage.getItem(DATA_KEY));
+    if (obj && Array.isArray(obj.items) && obj.items.length) { data = obj; return true; }
+  }catch(e){ /* 缓存损坏则忽略 */ }
+  return false;
+}
+
+/* ---------- 拉取 data.json（8 秒超时） ---------- */
+function fetchData(){
+  return new Promise((resolve, reject) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    fetch('data.json?v=' + Date.now(), { signal: ctrl.signal }) // 加参数绕过 SW 缓存
+      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then((d) => { clearTimeout(timer); resolve(d); })
+      .catch((e) => { clearTimeout(timer); reject(e); });
+  });
+}
+
+/* ---------- 项目卡片 ---------- */
+function starLine(it){
+  // 四指标：总星 / 今日增 / 周增 / 月增（有则显示，无则 —）
+  const parts = [];
+  parts.push(`⭐ ${fmt(it.stars)}`);
+  parts.push(it.stars_today != null ? `🔥 今日+${fmt(it.stars_today)}` : '🔥 —');
+  parts.push(it.stars_week  != null ? `📈 周增+${fmt(it.stars_week)}` : '📈 —');
+  parts.push(it.stars_month != null ? `📅 月增+${fmt(it.stars_month)}` : '📅 —');
+  return parts.join('  ');
+}
+function badgeClass(b){
+  if (b === 'Skill')  return 'badge-skill';   // Skill → 蓝
+  if (b === 'Agent')  return 'badge-agent';   // Agent → 紫
+  return 'badge-soft';                        // 软件等 → 灰
+}
+function cardHTML(it){
+  const url = it.url || ('https://github.com/' + it.owner_repo);
+  const hasDetail = !!(it.detail_zh && it.detail_zh.trim());
+  const langTag = it.lang ? `<span class="lang-chip">${esc(it.lang)}</span>` : '';
+  return `
+  <div class="card" data-repo="${esc(it.owner_repo)}">
+    <div class="card-top">
+      <span class="card-name">${esc(it.name)}</span>
+      ${it.badge ? `<span class="badge ${badgeClass(it.badge)}">${esc(it.badge)}</span>` : ''}
+    </div>
+    <div class="stars">${starLine(it)}</div>
+    <p class="desc">${esc(it.desc_zh)}</p>
+    ${langTag ? `<div class="meta-row">${langTag}</div>` : ''}
+    ${hasDetail ? `
+    <button type="button" class="detail-toggle">详情介绍</button>
+    <div class="detail-body" hidden>
+      <p>${esc(it.detail_zh)}</p>
+    </div>` : ''}
+    <div class="card-actions">
+      <a class="gh-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <button type="button" class="copy-btn" data-url="${esc(url)}">复制链接</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- 卡片交互：展开详情 / 复制链接（事件委托） ---------- */
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('.detail-toggle');
+  if (toggle){
+    const body = toggle.nextElementSibling;
+    const hidden = body.hasAttribute('hidden');
+    body.toggleAttribute('hidden', !hidden);
+    toggle.textContent = hidden ? '收起介绍' : '详情介绍';
+    return;
+  }
+  const copyBtn = e.target.closest('.copy-btn');
+  if (copyBtn){
+    copyToClipboard(copyBtn.dataset.url);
+  }
+});
+
+/* ---------- 复制到剪贴板：Clipboard API 优先，失败回退 execCommand 并如实提示 ---------- */
+function copyFallback(url){
+  const ta = document.createElement('textarea');
+  ta.value = url;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try{ ok = document.execCommand('copy'); }catch(_){ ok = false; }
+  document.body.removeChild(ta);
+  toast(ok ? '已复制 GitHub 链接' : '复制失败，请长按链接手动复制');
+  return ok;
+}
+function copyToClipboard(url){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url)
+      .then(() => toast('已复制 GitHub 链接'))
+      .catch(() => copyFallback(url)); // 页面无焦点/权限被拒 → 兜底，不能静默失败
+  } else {
+    copyFallback(url);
+  }
+}
+
+/* ---------- 轻提示 ---------- */
+let _toastTimer = null;
+function toast(msg){
+  let el = document.getElementById('toast');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* ---------- 三个 Tab 各自渲染 ---------- */
+function render(){
+  if (!data) return;
+  const items = data.items;
+
+  // 过滤 + 按 stars 降序
+  const top   = items.filter(i => i.source === 'topstar').sort((a,b) => b.stars - a.stars);
+  const fresh = items.filter(i => i.source === 'new').sort((a,b) => b.stars - a.stars);
+  const rest  = items.filter(i => i.cat !== 'other'); // 分类 Tab 排除 other
+  // 兜底：既无有效分类、又不在「高分榜/新项目」出现的条目，避免任何 Tab 都看不到
+  const orphan = items.filter(i => i.cat === 'other' && i.source !== 'topstar' && i.source !== 'new')
+                      .sort((a,b) => b.stars - a.stars);
+
+  // 更新顶部：日期 + 总数
+  $('meta').textContent = (data.date || '') + ' · 共 ' + items.length + ' 个项目';
+
+  // 更新底部 Tab 数量角标
+  $('cTop').textContent = top.length;
+  $('cNew').textContent = fresh.length;
+  $('cCat').textContent = rest.length + orphan.length;
+
+  // 高分榜
+  const paneTop = `
+    <section class="pane active" id="pane-topstar">
+      ${top.length ? top.map(cardHTML).join('') : '<div class="empty">本页暂无项目</div>'}
+    </section>`;
+
+  // 新项目
+  const paneNew = `
+    <section class="pane" id="pane-new">
+      ${fresh.length ? fresh.map(cardHTML).join('') : '<div class="empty">本页暂无项目</div>'}
+    </section>`;
+
+  // 分类：按固定顺序分组，组内按 stars 降序；空组不显示
+  let paneCat = '<section class="pane" id="pane-cat">';
+  let shown = 0;
+  for (const [key, label, emoji] of CATS){
+    const group = rest.filter(i => i.cat === key).sort((a,b) => b.stars - a.stars);
+    if (!group.length) continue; // 空分类不显示
+    shown += group.length;
+    paneCat += `<h2 class="group-title">${emoji} ${label}<span class="g-count">${group.length}</span></h2>`
+             + group.map(cardHTML).join('');
+  }
+  // 兜底组：无有效分类但确实在库里的条目（当前为 0 条也不报错）
+  if (orphan.length){
+    shown += orphan.length;
+    paneCat += `<h2 class="group-title">📦 其他<span class="g-count">${orphan.length}</span></h2>`
+             + orphan.map(cardHTML).join('');
+  }
+  paneCat += shown ? '' : '<div class="empty">暂无分类项目</div>';
+  paneCat += '</section>';
+
+  $('main').innerHTML = paneTop + paneNew + paneCat;
+  switchTab(curTab); // 恢复当前选中的 Tab
+}
+
+/* ---------- Tab 切换 ---------- */
+let curTab = 'topstar';
+function switchTab(name){
+  curTab = name;
+  document.querySelectorAll('.tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.pane').forEach(p =>
+    p.classList.toggle('active', p.id === 'pane-' + name));
+}
+$('tabbar').addEventListener('click', (e) => {
+  const b = e.target.closest('.tab');
+  if (b) switchTab(b.dataset.tab);
+});
+
+/* ---------- 刷新：重新 fetch data.json，成功则覆盖缓存 ---------- */
+async function refresh(){
+  const btn = $('refreshBtn');
+  btn.classList.add('spin');
+  try{
+    const d = await fetchData();
+    data = d;
+    try{ localStorage.setItem(DATA_KEY, JSON.stringify(d)); }catch(e){ /* 存不下就忽略 */ }
+    $('banner').hidden = true;  // 网络恢复：撤掉离线提示
+    $('err').hidden = true;
+    render();
+  }catch(e){
+    if (data){
+      // 有缓存（localStorage 或本次会话已加载）→ 继续显示旧数据并提示
+      $('banner').hidden = false;
+      if (!$('err').hidden) $('err').hidden = true;
+    }else{
+      // 完全没数据 → 显示加载失败 + 重试按钮
+      $('err').hidden = false;
+    }
+  }finally{
+    btn.classList.remove('spin');
+  }
+}
+$('refreshBtn').addEventListener('click', refresh);
+$('retryBtn').addEventListener('click', refresh);
+
+/* ---------- 启动：先渲染缓存，再静默刷新 ---------- */
+initTheme();
+if (loadCache()){
+  render();        // ① 有缓存：立即展示（可能随后被新数据替换）
+  $('meta').textContent = (data.date || '') + ' · 共 ' + data.items.length + ' 个项目（缓存）';
+}
+refresh();         // ② 静默刷新；首次无缓存且失败时 → 出错提示条
+
+/* ---------- Service Worker：离线可用（仅 localhost / https 生效；局域网 IP 访问时浏览器拒绝注册，属正常） ---------- */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* 注册失败不影响在线使用 */ });
+  });
+}
+</script>
+</body>
+</html>
